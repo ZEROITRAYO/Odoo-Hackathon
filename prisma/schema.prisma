@@ -1,0 +1,278 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  PROCUREMENT_OFFICER
+  VENDOR
+  MANAGER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum VendorStatus {
+  ACTIVE
+  PENDING
+  BLOCKED
+}
+
+enum RFQStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SUBMITTED
+  SELECTED
+  REJECTED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum POStatus {
+  GENERATED
+  SENT
+  ACCEPTED
+  CLOSED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      UserRole   @default(PROCUREMENT_OFFICER)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  rfqs          RFQ[]
+  approvals     Approval[]
+  activityLogs  ActivityLog[]
+  notifications Notification[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+  @@map("password_reset_tokens")
+}
+
+model Vendor {
+  id            String       @id @default(cuid())
+  vendorCode    String       @unique
+  companyName   String
+  gstNumber     String
+  category      String
+  contactPerson String
+  phone         String
+  email         String
+  address       String
+  rating        Float        @default(0)
+  status        VendorStatus @default(PENDING)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relations
+  rfqVendors   RFQVendor[]
+  quotations   Quotation[]
+  purchaseOrders PurchaseOrder[]
+
+  @@index([vendorCode])
+  @@index([category])
+  @@index([status])
+  @@map("vendors")
+}
+
+model RFQ {
+  id            String    @id @default(cuid())
+  rfqNumber     String    @unique
+  title         String
+  description   String?
+  quantity      Int
+  deadline      DateTime
+  attachmentUrl String?
+  status        RFQStatus @default(DRAFT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  createdBy  String
+  creator    User        @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  rfqVendors RFQVendor[]
+  quotations Quotation[]
+
+  @@index([rfqNumber])
+  @@index([status])
+  @@index([deadline])
+  @@index([createdBy])
+  @@map("rfqs")
+}
+
+model RFQVendor {
+  rfqId    String
+  vendorId String
+
+  rfq    RFQ    @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  @@id([rfqId, vendorId])
+  @@map("rfq_vendors")
+}
+
+model Quotation {
+  id              String          @id @default(cuid())
+  quotationNumber String          @unique
+  rfqId           String
+  vendorId        String
+  price           Float
+  deliveryDays    Int
+  notes           String?
+  status          QuotationStatus @default(DRAFT)
+  submittedAt     DateTime?
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  rfq      RFQ        @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  vendor   Vendor     @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  approval Approval?
+
+  @@unique([rfqId, vendorId])
+  @@index([quotationNumber])
+  @@index([rfqId])
+  @@index([vendorId])
+  @@index([status])
+  @@map("quotations")
+}
+
+model Approval {
+  id          String         @id @default(cuid())
+  quotationId String         @unique
+  approverId  String
+  remarks     String?
+  status      ApprovalStatus @default(PENDING)
+  approvedAt  DateTime?
+  createdAt   DateTime       @default(now())
+
+  // Relations
+  quotation     Quotation      @relation(fields: [quotationId], references: [id], onDelete: Restrict)
+  approver      User           @relation(fields: [approverId], references: [id], onDelete: Restrict)
+  purchaseOrder PurchaseOrder?
+
+  @@index([approverId])
+  @@index([status])
+  @@map("approvals")
+}
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  poNumber    String   @unique
+  approvalId  String   @unique
+  vendorId    String
+  subtotal    Float
+  tax         Float
+  total       Float
+  status      POStatus @default(GENERATED)
+  generatedAt DateTime @default(now())
+  pdfUrl      String?
+
+  // Relations
+  approval Approval  @relation(fields: [approvalId], references: [id], onDelete: Restrict)
+  vendor   Vendor    @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  invoice  Invoice?
+
+  @@index([poNumber])
+  @@index([vendorId])
+  @@index([status])
+  @@map("purchase_orders")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  poId          String        @unique
+  subtotal      Float
+  tax           Float
+  total         Float
+  pdfUrl        String?
+  status        InvoiceStatus @default(DRAFT)
+  generatedAt   DateTime      @default(now())
+
+  // Relations
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Restrict)
+
+  @@index([invoiceNumber])
+  @@index([status])
+  @@map("invoices")
+}
+
+// Immutable audit log — NO soft delete, NO updatedAt (write-once)
+model ActivityLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  timestamp  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([timestamp])
+  @@map("activity_logs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@map("notifications")
+}
