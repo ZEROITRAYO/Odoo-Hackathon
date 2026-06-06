@@ -21,6 +21,8 @@ VendorBridge is a full-stack procurement ERP that manages the complete vendor li
 
 <!-- 📸 SCREENSHOT: Landing page / Login screen -->
 > `screenshots/login.png`
+> <img width="1808" height="1053" alt="image" src="https://github.com/user-attachments/assets/816ef2e0-6315-4be6-8f16-1c71ab34dd17" />
+
 
 ---
 
@@ -50,9 +52,14 @@ Vendor Onboarding → RFQ Creation → Quotation Submission → Comparison → A
 
 <!-- 📸 SCREENSHOT: Quotation comparison table showing AI scoring -->
 > `screenshots/quotation-compare.png`
+> <img width="1805" height="1050" alt="image" src="https://github.com/user-attachments/assets/9ced6cf0-2756-4ff1-a57e-cbc056eb9f88" />
+
 
 <!-- 📸 SCREENSHOT: Approval workflow / manager approvals page -->
-> `screenshots/approvals.png`
+> `screenshots/RFQs.png`
+> <img width="1805" height="1052" alt="image" src="https://github.com/user-attachments/assets/84a503b5-be58-47b2-a8c8-f8cb17a50dc2" />
+
+
 
 ### Analytics & Reports
 - Monthly spend trends (last 6 months)
@@ -63,9 +70,11 @@ Vendor Onboarding → RFQ Creation → Quotation Submission → Comparison → A
 
 <!-- 📸 SCREENSHOT: Dashboard with charts and KPI cards -->
 > `screenshots/dashboard.png`
+> <img width="1806" height="1048" alt="image" src="https://github.com/user-attachments/assets/06d7bb5b-ca37-433c-85f3-8b0fca02ab4b" />
 
 <!-- 📸 SCREENSHOT: Reports page with spend breakdown -->
 > `screenshots/reports.png`
+> <img width="1811" height="1061" alt="image" src="https://github.com/user-attachments/assets/26131f91-a0bc-4b30-bf96-8389625b46df" />
 
 ### Other Highlights
 - **Role-based access** — 4 roles with route-level middleware enforcement
